@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Billetterie</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -19,7 +19,7 @@
     header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; gap: 10px; }
     .header-left h1 { font-size: 18px; font-weight: 700; }
     .header-left p { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
     .sync-indicator { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); padding: 5px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); }
     .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
@@ -34,6 +34,7 @@
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
     .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-sm { padding: 7px 12px; font-size: 13px; }
     .btn:disabled { opacity: 0.4; cursor: default; }
 
     .role-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
@@ -41,7 +42,7 @@
     .role-badge.verificateur { background: var(--done-bg); color: var(--accent); }
 
     .stats-bar { display: flex; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
-    .stat { padding: 10px 20px 10px 0; flex: 1; max-width: 200px; }
+    .stat { padding: 10px 20px 10px 0; flex: 1; }
     .stat-value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
     .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-top: 1px; }
     .stat-done .stat-value { color: var(--accent); }
@@ -74,13 +75,13 @@
     .ticket-label { font-size: 10px; text-transform: uppercase; color: var(--muted); }
     .badge-done { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
 
-    .btn-delete { background: none; border: none; color: #ddd; font-size: 18px; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: color 0.15s; -webkit-tap-highlight-color: transparent; }
+    .btn-delete { background: none; border: none; color: #ddd; font-size: 18px; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: color 0.15s; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
     .btn-delete:active { color: var(--danger); }
 
     .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 150; padding: 24px; backdrop-filter: blur(2px); }
     .confirm-box { background: var(--surface); border-radius: 16px; padding: 24px; max-width: 320px; width: 100%; text-align: center; }
     .confirm-box h3 { font-size: 17px; margin-bottom: 8px; }
-    .confirm-box p { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+    .confirm-box p { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.4; }
     .confirm-actions { display: flex; gap: 10px; }
     .confirm-actions .btn { flex: 1; justify-content: center; }
 
@@ -111,13 +112,12 @@
     .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px; width: 100%; max-width: 600px; animation: slideUp 0.25s ease; max-height: 85vh; overflow-y: auto; }
     @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
     .modal h2 { font-size: 18px; margin-bottom: 6px; }
-    .modal p { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+    .modal p.subtitle { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
     .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
     .modal-actions .btn { flex: 1; justify-content: center; }
     .input-field { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 10px; }
     .input-field:focus { border-color: var(--accent); }
-
-    .prix-banner { background: var(--done-bg); border: 1px solid var(--done-border); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 15px; font-weight: 600; color: var(--accent); display: none; }
+    .prix-affiche { background: var(--done-bg); border: 1px solid var(--done-border); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-weight: 600; color: var(--accent); margin-bottom: 10px; text-align: center; }
 
     .histo-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .histo-item:last-child { border-bottom: none; }
@@ -129,7 +129,7 @@
     .resume-stat:last-child { border-bottom: none; }
     .resume-stat span:last-child { font-weight: 700; }
     .resume-incomplets { margin-top: 16px; }
-    .resume-incomplets h3 { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+    .resume-incomplets h3 { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
     .incomplet-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .incomplet-item:last-child { border-bottom: none; }
 
@@ -140,9 +140,11 @@
     .role-cards { display: flex; gap: 14px; flex-direction: column; width: 100%; max-width: 320px; }
     .role-card { background: var(--surface); border: 2px solid var(--border); border-radius: 14px; padding: 20px; cursor: pointer; transition: all 0.15s; text-align: left; -webkit-tap-highlight-color: transparent; }
     .role-card:active { transform: scale(0.97); }
-    .role-icon { font-size: 28px; margin-bottom: 10px; }
+    .role-card.verificateur:active { border-color: var(--accent); background: var(--done-bg); }
+    .role-card.superviseur:active { border-color: #4F46E5; background: #EEF2FF; }
     .role-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
     .role-card p { font-size: 13px; color: var(--muted); margin: 0; }
+    .role-icon { font-size: 28px; margin-bottom: 10px; }
 
     .toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); background: #1A1A1A; color: #fff; padding: 11px 18px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 250; animation: fadeInOut 2.5s forwards; white-space: nowrap; }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateX(-50%) translateY(10px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
@@ -162,23 +164,18 @@
       <span id="sync-label">…</span>
     </div>
     <span class="role-badge" id="role-badge"></span>
-    <button class="btn btn-ghost" id="btn-histo" onclick="openHisto()" style="padding:7px 12px;font-size:13px">📋 Historique</button>
-    <button class="btn btn-ghost hidden" id="btn-prix" onclick="openPrix()" style="padding:7px 12px;font-size:13px">💲 Prix</button>
-    <button class="btn btn-ghost hidden" id="btn-resume" onclick="openResume()" style="padding:7px 12px;font-size:13px">📊 Résumé</button>
-    <button class="btn btn-ghost hidden" id="btn-export" onclick="exportExcel()" style="padding:7px 12px;font-size:13px">⬇ Export</button>
-    <button class="btn btn-ghost" onclick="logout()" style="padding:7px 12px;font-size:13px">Quitter</button>
+    <button class="btn btn-ghost btn-sm hidden" id="btn-histo" onclick="openHisto()">📋 Historique</button>
+    <button class="btn btn-ghost btn-sm hidden" id="btn-resume" onclick="openResume()">📊 Résumé</button>
+    <button class="btn btn-ghost btn-sm hidden" id="btn-export" onclick="exportExcel()">⬇ Export</button>
+    <button class="btn btn-ghost btn-sm hidden" id="btn-prix" onclick="openPrix()">💲 Prix</button>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Quitter</button>
   </div>
 </header>
 
 <div class="stats-bar hidden" id="stats-bar">
-  <div class="stat stat-done">
-    <div class="stat-value" id="stat-done">0</div>
-    <div class="stat-label">Élèves complétés</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value" id="stat-billets">0/0</div>
-    <div class="stat-label">Billets validés</div>
-  </div>
+  <div class="stat stat-done"><div class="stat-value" id="stat-done">0</div><div class="stat-label">Complétés</div></div>
+  <div class="stat"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Élèves</div></div>
+  <div class="stat"><div class="stat-value" id="stat-billets-val">0</div><div class="stat-label">Billets validés</div></div>
 </div>
 
 <div id="controls" class="hidden">
@@ -205,12 +202,12 @@
     <h2 id="role-welcome">Bonjour!</h2>
     <p>Quel est ton rôle pour cet événement?</p>
     <div class="role-cards">
-      <div class="role-card" onclick="selectRole('verificateur')">
+      <div class="role-card verificateur" onclick="selectRole('verificateur')">
         <div class="role-icon">🎫</div>
         <h3>Vérificateur</h3>
         <p>Valide les billets et gère la liste des élèves</p>
       </div>
-      <div class="role-card" onclick="selectRole('superviseur')">
+      <div class="role-card superviseur" onclick="selectRole('superviseur')">
         <div class="role-icon">👁</div>
         <h3>Superviseur</h3>
         <p>Supervise et répond aux demandes d'aide</p>
@@ -223,21 +220,20 @@
 
 <!-- FABs -->
 <div class="fab-aide hidden" id="fab-aide">
-  <button onclick="demanderAide()" title="Demander de l'aide">🆘</button>
+  <button onclick="demanderAide()">🆘</button>
 </div>
 <div class="fab-add hidden" id="fab-add">
-  <button onclick="openAjoutEleve()" title="Ajouter un élève">＋</button>
+  <button onclick="openAjoutEleve()">＋</button>
 </div>
 
 <!-- Modal ajout élève -->
 <div class="modal-overlay hidden" id="modal-ajout">
   <div class="modal">
     <h2>Ajouter un élève</h2>
-    <p>Achat sur place</p>
-    <div class="prix-banner" id="prix-banner"></div>
+    <p class="subtitle">Pour un achat sur place</p>
     <input class="input-field" type="text" id="ajout-nom" placeholder="Nom complet" />
-    <input class="input-field" type="number" id="ajout-billets" placeholder="Nombre de billets" min="1" max="20" oninput="updatePrixTotal()" />
-    <div id="prix-total-display" style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:14px;display:none"></div>
+    <input class="input-field" type="number" id="ajout-billets" placeholder="Nombre de billets" min="1" max="20" oninput="updatePrixAffiche()" />
+    <div id="prix-affiche" class="prix-affiche hidden"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeAjoutEleve()">Annuler</button>
       <button class="btn btn-primary" onclick="ajouterEleve()">Ajouter</button>
@@ -249,8 +245,8 @@
 <div class="modal-overlay hidden" id="modal-prix">
   <div class="modal">
     <h2>Prix par billet</h2>
-    <p>Ce prix sera affiché aux vérificateurs lors de l'ajout d'un élève.</p>
-    <input class="input-field" type="number" id="prix-input" placeholder="Ex : 5" min="0" step="0.25" />
+    <p class="subtitle">Entré une fois par le superviseur, visible lors des ajouts</p>
+    <input class="input-field" type="number" id="prix-input" placeholder="Ex: 5.00" min="0" step="0.25" />
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closePrix()">Annuler</button>
       <button class="btn btn-primary" onclick="sauvegarderPrix()">Enregistrer</button>
@@ -262,7 +258,7 @@
 <div class="modal-overlay hidden" id="modal-histo">
   <div class="modal">
     <h2>Historique des validations</h2>
-    <p>Les 30 dernières actions de cette session</p>
+    <p class="subtitle">Les 30 dernières actions</p>
     <div id="histo-content"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeHisto()">Fermer</button>
@@ -273,8 +269,8 @@
 <!-- Modal résumé -->
 <div class="modal-overlay hidden" id="modal-resume">
   <div class="modal">
-    <h2>📊 Résumé</h2>
-    <p id="resume-subtitle"></p>
+    <h2>📊 Résumé de l'événement</h2>
+    <p class="subtitle" id="resume-subtitle"></p>
     <div id="resume-content"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeResume()">Fermer</button>
@@ -299,7 +295,7 @@
 <div class="confirm-overlay hidden" id="confirm-decrement">
   <div class="confirm-box">
     <h3>Retirer un billet?</h3>
-    <p id="confirm-decrement-nom"></p>
+    <p id="confirm-decrement-nom">Es-tu certain de vouloir retirer un billet validé?</p>
     <div class="confirm-actions">
       <button class="btn btn-ghost" onclick="closeConfirmDecrement()">Annuler</button>
       <button class="btn btn-danger" onclick="confirmerDecrement()">Retirer</button>
@@ -325,42 +321,45 @@
   const SCOPE     = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile';
   const POLL_MS   = 4000;
 
-  let accessToken   = null;
-  let userName      = '';
-  let userRole      = null;
-  let eleves        = [];
-  let filtre        = 'tous';
-  let pollTimer     = null;
-  let pendingWrite  = false;
+  let accessToken      = null;
+  let userName         = '';
+  let userRole         = null;
+  let eleves           = [];
+  let filtre           = 'tous';
+  let pollTimer        = null;
+  let pendingWrite     = false;
   let derniereAlerteId = null;
   let deleteTargetId   = null;
   let decrementTargetId = null;
-  let historique    = [];
-  let wakeLock      = null;
-  let prixParBillet = 0; // stocké en col H1
+  let historique       = [];
+  let wakeLock         = null;
+  let prixBillet       = null; // null = pas configuré
 
   // ── WakeLock ──
   async function acquireWakeLock() {
-    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+    try {
+      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch(e) {}
   }
   document.addEventListener('visibilitychange', async () => {
     if (wakeLock !== null && document.visibilityState === 'visible' && userRole) await acquireWakeLock();
   });
 
+  // ── Vibration ──
   function vibrate(pattern) { if ('vibrate' in navigator) navigator.vibrate(pattern); }
 
+  // ── Son alerte ──
   function jouerSonAlerte() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const play = (freq, start, dur) => {
+      [[880,0],[660,0.25],[880,0.5],[660,0.75],[880,1.0]].forEach(([f,t]) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
-        o.frequency.value = freq; o.type = 'sine';
-        g.gain.setValueAtTime(0.4, ctx.currentTime + start);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
-        o.start(ctx.currentTime + start); o.stop(ctx.currentTime + start + dur);
-      };
-      play(880,0,0.2); play(660,0.25,0.2); play(880,0.5,0.2); play(660,0.75,0.2); play(880,1.0,0.4);
+        o.frequency.value = f; o.type = 'sine';
+        g.gain.setValueAtTime(0.4, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.3);
+      });
     } catch(e) {}
   }
 
@@ -404,11 +403,13 @@
     badge.textContent = role === 'superviseur' ? '👁 Superviseur' : '🎫 Vérificateur';
     badge.className = 'role-badge ' + role;
 
+    // Boutons selon rôle
+    document.getElementById('btn-histo').classList.remove('hidden');
     if (role === 'verificateur') document.getElementById('fab-aide').classList.remove('hidden');
     if (role === 'superviseur') {
-      document.getElementById('btn-prix').classList.remove('hidden');
       document.getElementById('btn-resume').classList.remove('hidden');
       document.getElementById('btn-export').classList.remove('hidden');
+      document.getElementById('btn-prix').classList.remove('hidden');
     }
     document.getElementById('fab-add').classList.remove('hidden');
 
@@ -420,10 +421,10 @@
   }
 
   function logout() {
-    accessToken = null; userRole = null; eleves = []; historique = []; prixParBillet = 0;
+    accessToken = null; userRole = null; eleves = []; historique = []; prixBillet = null;
     clearInterval(pollTimer);
     if (wakeLock) { wakeLock.release(); wakeLock = null; }
-    ['main-header','stats-bar','controls','fab-aide','fab-add','btn-prix','btn-resume','btn-export'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['main-header','stats-bar','controls','fab-aide','fab-add','btn-histo','btn-resume','btn-export','btn-prix'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById('list').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
     document.getElementById('role-screen').classList.add('hidden');
@@ -439,64 +440,68 @@
   }
   async function sheetsUpdate(range, values) {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
-    const r = await fetch(url, { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) });
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values })
+    });
     if (!r.ok) throw new Error(await r.text());
   }
   async function sheetsAppend(range, values) {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
-    const r = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) });
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values })
+    });
     if (!r.ok) throw new Error(await r.text());
-  }
-  async function sheetsClearRow(row) {
-    await sheetsUpdate(`${SHEET_TAB}!A${row}:F${row}`, [['','','','','','']]);
   }
 
   async function initSheet() {
     try {
       const data = await sheetsGet(`${SHEET_TAB}!A1:H1`);
       if (!data.values || data.values.length === 0) {
-        await sheetsUpdate(`${SHEET_TAB}!A1:H1`, [['Nom','Billets','Validés','Statut','AlerteId','AlerteStatut','AlerteNom','Prix']]);
+        await sheetsUpdate(`${SHEET_TAB}!A1:H1`, [['Nom','Billets','Validés','Statut','AlerteId','AlerteStatut','AlerteNom','PrixBillet']]);
       }
-    } catch(e) { console.error('initSheet:', e); }
+    } catch(e) { console.error('initSheet:', e); setSyncStatus('error'); }
   }
 
-  // ── Prix ──
+  // ── Prix billet ──
   async function pullPrix() {
     try {
       const data = await sheetsGet(`${SHEET_TAB}!H1`);
       const val = data.values?.[0]?.[0];
-      if (val && !isNaN(parseFloat(val))) prixParBillet = parseFloat(val);
+      if (val && val !== 'PrixBillet') {
+        prixBillet = parseFloat(val);
+      }
     } catch(e) {}
   }
 
   function openPrix() {
-    document.getElementById('prix-input').value = prixParBillet > 0 ? prixParBillet : '';
+    document.getElementById('prix-input').value = prixBillet !== null ? prixBillet : '';
     document.getElementById('modal-prix').classList.remove('hidden');
   }
   function closePrix() { document.getElementById('modal-prix').classList.add('hidden'); }
-
   async function sauvegarderPrix() {
     const val = parseFloat(document.getElementById('prix-input').value);
     if (isNaN(val) || val < 0) { toast('Entre un prix valide'); return; }
-    prixParBillet = val;
+    prixBillet = val;
     closePrix();
     try {
-      await sheetsUpdate(`${SHEET_TAB}!H1`, [[prixParBillet]]);
-      toast(`Prix fixé à ${formatPrix(prixParBillet)} par billet`);
+      await sheetsUpdate(`${SHEET_TAB}!H1`, [[val]]);
+      toast(`Prix fixé à ${val.toFixed(2)}$ par billet`);
     } catch(e) { console.error(e); }
   }
 
-  function formatPrix(p) { return p % 1 === 0 ? `${p}$` : `${p.toFixed(2)}$`; }
-
-  function updatePrixTotal() {
-    const nbStr = document.getElementById('ajout-billets').value;
-    const nb = parseInt(nbStr, 10);
-    const display = document.getElementById('prix-total-display');
-    if (prixParBillet > 0 && nb > 0) {
-      display.textContent = `Total à percevoir : ${formatPrix(nb * prixParBillet)}`;
-      display.style.display = 'block';
+  function updatePrixAffiche() {
+    const nb = parseInt(document.getElementById('ajout-billets').value, 10);
+    const el = document.getElementById('prix-affiche');
+    if (prixBillet !== null && !isNaN(nb) && nb > 0) {
+      const total = (prixBillet * nb).toFixed(2);
+      el.textContent = `💰 Total à collecter : ${total}$ (${nb} × ${prixBillet.toFixed(2)}$)`;
+      el.classList.remove('hidden');
     } else {
-      display.style.display = 'none';
+      el.classList.add('hidden');
     }
   }
 
@@ -537,7 +542,8 @@
         derniereAlerteId = alerteId;
         document.getElementById('alerte-text').textContent = `${alerteNom} a besoin d'aide!`;
         document.getElementById('alerte-superviseur').classList.remove('hidden');
-        jouerSonAlerte(); vibrate([200,100,200,100,400]);
+        jouerSonAlerte();
+        vibrate([200,100,200,100,400]);
       }
       if (userRole === 'verificateur' && alerteId === derniereAlerteId && alerteStatut.startsWith('en_route:')) {
         const quiEnRoute = alerteStatut.replace('en_route:', '');
@@ -560,15 +566,17 @@
     try {
       setSyncStatus('syncing');
       await sheetsUpdate(`${SHEET_TAB}!E1:G1`, [[alerteId, 'actif', userName]]);
-      setSyncStatus('connected'); vibrate([100,50,100]);
+      setSyncStatus('connected');
+      vibrate([100,50,100]);
       toast('Demande d\'aide envoyée!');
-    } catch(e) { setSyncStatus('error'); console.error(e); }
+    } catch(e) { setSyncStatus('error'); }
   }
 
   async function enRoute() {
     try {
       await sheetsUpdate(`${SHEET_TAB}!F1:F1`, [[`en_route:${userName}`]]);
-      fermerAlerte(); toast('Les vérificateurs ont été avertis!');
+      fermerAlerte();
+      toast('Les vérificateurs ont été avertis!');
     } catch(e) { console.error(e); }
   }
 
@@ -596,7 +604,7 @@
       ? '<p style="text-align:center;color:var(--muted);padding:20px 0">Aucune validation encore</p>'
       : historique.map(h => `
           <div class="histo-item">
-            <div><div class="histo-nom">${h.nom}</div><div class="histo-detail">${h.action} · ${h.par}</div></div>
+            <div><div class="histo-nom">${h.nom}</div><div class="histo-detail">${h.action} · par ${h.par}</div></div>
             <div class="histo-time">${h.heure}</div>
           </div>`).join('');
     document.getElementById('modal-histo').classList.remove('hidden');
@@ -605,33 +613,30 @@
 
   // ── Résumé ──
   function openResume() {
-    const total = eleves.length;
-    const complets = eleves.filter(e => e.valides >= e.billets).length;
+    const total      = eleves.length;
+    const complets   = eleves.filter(e => e.valides >= e.billets).length;
     const incomplets = eleves.filter(e => e.valides < e.billets);
     const billetsVal = eleves.reduce((a,e) => a+e.valides, 0);
     const billetsTot = eleves.reduce((a,e) => a+e.billets, 0);
-    const pct = billetsTot > 0 ? Math.round((billetsVal/billetsTot)*100) : 0;
-    const recettes = prixParBillet > 0 ? ` · ${formatPrix(billetsVal * prixParBillet)} perçu` : '';
+    const pct        = billetsTot > 0 ? Math.round((billetsVal/billetsTot)*100) : 0;
+    const totalArgent = prixBillet !== null ? `${(billetsVal * prixBillet).toFixed(2)}$` : 'N/A';
 
-    document.getElementById('resume-subtitle').textContent = `${complets}/${total} élèves · ${pct}% validés${recettes}`;
+    document.getElementById('resume-subtitle').textContent = `${complets}/${total} élèves · ${pct}% des billets validés`;
 
     let html = `
       <div class="resume-stat"><span>Élèves complétés</span><span>${complets} / ${total}</span></div>
       <div class="resume-stat"><span>Billets validés</span><span>${billetsVal} / ${billetsTot}</span></div>
-      <div class="resume-stat"><span>Progression</span><span>${pct}%</span></div>`;
-
-    if (prixParBillet > 0) {
-      html += `<div class="resume-stat"><span>Recettes estimées</span><span>${formatPrix(billetsVal * prixParBillet)}</span></div>`;
-    }
+      <div class="resume-stat"><span>Progression</span><span>${pct}%</span></div>
+      <div class="resume-stat"><span>Argent collecté</span><span>${totalArgent}</span></div>`;
 
     if (incomplets.length > 0) {
-      html += `<div class="resume-incomplets"><h3>Incomplets (${incomplets.length})</h3>`;
+      html += `<div class="resume-incomplets"><h3>Élèves incomplets (${incomplets.length})</h3>`;
       incomplets.forEach(e => {
         html += `<div class="incomplet-item"><span>${e.nom}</span><span>${e.valides}/${e.billets} billets</span></div>`;
       });
       html += '</div>';
     } else {
-      html += `<div style="text-align:center;padding:24px 0;font-size:40px">🎉</div><p style="text-align:center;color:var(--accent);font-weight:700;margin-bottom:0">Tout le monde a payé!</p>`;
+      html += `<div style="text-align:center;padding:20px 0;font-size:32px">🎉</div><p style="text-align:center;color:var(--accent);font-weight:700;margin:0">Tout le monde a payé!</p>`;
     }
 
     document.getElementById('resume-content').innerHTML = html;
@@ -641,13 +646,13 @@
 
   // ── Export Excel ──
   function exportExcel() {
-    const data = [['Nom', 'Billets achetés', 'Billets validés', 'Statut', prixParBillet > 0 ? 'Montant payé' : null].filter(Boolean)];
+    const rows = [['Nom', 'Billets achetés', 'Billets validés', 'Statut', 'Montant dû']];
     eleves.forEach(e => {
-      const row = [e.nom, e.billets, e.valides, e.valides >= e.billets ? 'Complet' : 'Incomplet'];
-      if (prixParBillet > 0) row.push(e.valides * prixParBillet);
-      data.push(row);
+      const montant = prixBillet !== null ? (e.billets * prixBillet).toFixed(2) : '';
+      rows.push([e.nom, e.billets, e.valides, e.valides >= e.billets ? 'Complet' : 'Incomplet', montant]);
     });
-    const ws = XLSX.utils.aoa_to_sheet(data);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:25},{wch:15},{wch:15},{wch:12},{wch:12}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Billetterie');
     XLSX.writeFile(wb, `billetterie_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -658,12 +663,7 @@
   function openAjoutEleve() {
     document.getElementById('ajout-nom').value = '';
     document.getElementById('ajout-billets').value = '';
-    document.getElementById('prix-total-display').style.display = 'none';
-    const banner = document.getElementById('prix-banner');
-    if (prixParBillet > 0) {
-      banner.textContent = `Prix : ${formatPrix(prixParBillet)} / billet`;
-      banner.style.display = 'block';
-    } else { banner.style.display = 'none'; }
+    document.getElementById('prix-affiche').classList.add('hidden');
     document.getElementById('modal-ajout').classList.remove('hidden');
     setTimeout(() => document.getElementById('ajout-nom').focus(), 100);
   }
@@ -675,11 +675,13 @@
     if (!nom) { toast('Entre un nom'); return; }
     if (!billets || billets < 1) { toast('Entre un nombre de billets valide'); return; }
     closeAjoutEleve();
-    pendingWrite = true; setSyncStatus('syncing');
+    pendingWrite = true;
+    setSyncStatus('syncing');
     try {
       await sheetsAppend(`${SHEET_TAB}!A:D`, [[nom, billets, 0, 'Incomplet']]);
       ajouterHistorique(nom, 'Ajouté sur place', userName);
-      setSyncStatus('connected'); toast(`${nom} ajouté!`);
+      setSyncStatus('connected');
+      toast(`${nom} ajouté!`);
       await pullFromSheet();
     } catch(e) { setSyncStatus('error'); console.error(e); }
     pendingWrite = false;
@@ -698,10 +700,11 @@
     if (!e) return;
     pendingWrite = true; setSyncStatus('syncing');
     try {
-      await sheetsClearRow(id);
+      await sheetsUpdate(`${SHEET_TAB}!A${id}:F${id}`, [['','','','','','']]);
       ajouterHistorique(e.nom, 'Supprimé', userName);
       toast(`${e.nom} supprimé`);
-      await pullFromSheet(); setSyncStatus('connected');
+      await pullFromSheet();
+      setSyncStatus('connected');
     } catch(err) { setSyncStatus('error'); console.error(err); }
     pendingWrite = false;
   }
@@ -710,7 +713,8 @@
   async function increment(id) {
     const e = eleves.find(x => x.id === id);
     if (!e || e.valides >= e.billets) return;
-    e.valides++; renderList(); updateStats();
+    e.valides++;
+    renderList(); updateStats();
     ajouterHistorique(e.nom, `+1 billet (${e.valides}/${e.billets})`, userName);
     if (e.valides >= e.billets) vibrate([100,50,100,50,200]);
     await pushValides(e);
@@ -726,7 +730,8 @@
     const id = decrementTargetId; closeConfirmDecrement();
     const e = eleves.find(x => x.id === id);
     if (!e || e.valides <= 0) return;
-    e.valides--; renderList(); updateStats();
+    e.valides--;
+    renderList(); updateStats();
     ajouterHistorique(e.nom, `-1 billet (${e.valides}/${e.billets})`, userName);
     await pushValides(e);
   }
@@ -736,7 +741,7 @@
     try {
       await sheetsUpdate(`${SHEET_TAB}!C${e.id}:D${e.id}`, [[e.valides, e.valides >= e.billets ? 'Complet' : 'Incomplet']]);
       setSyncStatus('connected');
-    } catch(err) { setSyncStatus('error'); toast('Erreur de synchro'); console.error(err); }
+    } catch(err) { setSyncStatus('error'); toast('Erreur de synchro'); }
     pendingWrite = false;
   }
 
@@ -744,7 +749,8 @@
   function setFilter(f, el) {
     filtre = f;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active'); renderList();
+    el.classList.add('active');
+    renderList();
   }
 
   // ── Render ──
@@ -766,24 +772,25 @@
     }
     container.innerHTML = '<div class="list">' + liste.map(e => {
       const done = e.valides >= e.billets;
-      const pct  = e.billets > 0 ? Math.round((e.valides / e.billets) * 100) : 0;
+      const pct  = e.billets > 0 ? Math.round((e.valides/e.billets)*100) : 0;
+      const nomEscape = e.nom.replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return `
         <div class="card ${done ? 'done' : ''}">
           <div class="card-info">
             <div class="card-name">${e.nom}</div>
-            <div class="card-sub">${e.billets} billet${e.billets > 1 ? 's' : ''}</div>
+            <div class="card-sub">${e.billets} billet${e.billets>1?'s':''} acheté${e.billets>1?'s':''}</div>
             <div class="progress-pill"><div class="progress-fill" style="width:${pct}%"></div></div>
           </div>
           <div class="ticket-counter">
-            <button class="counter-btn minus" onclick="ouvrirConfirmDecrement(${e.id},'${e.nom.replace(/'/g,"\\'")}')" ${e.valides === 0 ? 'disabled' : ''}>−</button>
+            <button class="counter-btn minus" onclick="ouvrirConfirmDecrement(${e.id},'${nomEscape}')" ${e.valides===0?'disabled':''}>−</button>
             <div class="ticket-display">
               <span class="ticket-fraction">${e.valides}/${e.billets}</span>
               <span class="ticket-label">validés</span>
             </div>
-            <button class="counter-btn plus" onclick="increment(${e.id})" ${done ? 'disabled' : ''}>+</button>
+            <button class="counter-btn plus" onclick="increment(${e.id})" ${done?'disabled':''}>+</button>
           </div>
           ${done ? '<span class="badge-done">✓ Payé</span>' : ''}
-          <button class="btn-delete" onclick="ouvrirConfirmDelete(${e.id},'${e.nom.replace(/'/g,"\\'")}')">✕</button>
+          <button class="btn-delete" onclick="ouvrirConfirmDelete(${e.id},'${nomEscape}')">✕</button>
         </div>`;
     }).join('') + '</div>';
   }
@@ -793,26 +800,30 @@
     const done       = eleves.filter(e => e.valides >= e.billets).length;
     const billetsVal = eleves.reduce((a,e) => a+e.valides, 0);
     const billetsTot = eleves.reduce((a,e) => a+e.billets, 0);
-    document.getElementById('stat-done').textContent = `${done} / ${eleves.length}`;
-    document.getElementById('stat-billets').textContent = `${billetsVal} / ${billetsTot}`;
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-total').textContent = eleves.length;
+    document.getElementById('stat-billets-val').textContent = `${billetsVal}/${billetsTot}`;
   }
 
   function updateUI() {
     document.getElementById('event-subtitle').textContent = eleves.length > 0
       ? `${eleves.length} élèves · ${eleves.reduce((a,e)=>a+e.billets,0)} billets`
       : 'Aucun élève';
-    updateStats(); renderList();
+    updateStats();
+    renderList();
   }
 
+  // ── Sync status ──
   function setSyncStatus(status) {
     const dot = document.getElementById('sync-dot'), label = document.getElementById('sync-label');
     dot.className = 'sync-dot';
-    if (status === 'connected')    { dot.classList.add('connected'); label.textContent = 'Synchronisé'; }
-    else if (status === 'syncing') { dot.classList.add('syncing');   label.textContent = 'Synchro…'; }
-    else if (status === 'error')   { dot.classList.add('error');     label.textContent = 'Erreur'; }
-    else { label.textContent = 'Déconnecté'; }
+    if (status==='connected')    { dot.classList.add('connected'); label.textContent='Synchronisé'; }
+    else if (status==='syncing') { dot.classList.add('syncing');   label.textContent='Synchro…'; }
+    else if (status==='error')   { dot.classList.add('error');     label.textContent='Erreur'; }
+    else { label.textContent='Déconnecté'; }
   }
 
+  // ── Toast ──
   function toast(msg) {
     const t = document.createElement('div');
     t.className = 'toast'; t.textContent = msg;
@@ -821,7 +832,9 @@
   }
 
   ['modal-ajout','modal-histo','modal-resume','modal-prix'].forEach(id => {
-    document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) this.classList.add('hidden');
+    });
   });
 </script>
 </body>
